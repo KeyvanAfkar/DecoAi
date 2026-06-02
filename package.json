@@ -1,0 +1,12 @@
+{
+  "name": "decobot",
+  "version": "1.0.0",
+  "description": "DecoBot interior design AI chat",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
