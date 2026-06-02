@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DecoBot — مشاور هوشمند دکور</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+/* ═══════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════ */
+:root {
+  --bg:        #0c0b09;
+  --bg2:       #131210;
+  --bg3:       #1a1916;
+  --bg4:       #242220;
+  --border:    rgba(255,248,230,0.07);
+  --border2:   rgba(255,248,230,0.13);
+  --text:      #f5f0e6;
+  --t2:        rgba(245,240,230,0.55);
+  --t3:        rgba(245,240,230,0.28);
+  --gold:      #c9a84c;
+  --gold2:     #e0be6e;
+  --gold-dim:  rgba(201,168,76,0.12);
+  --gold-glow: rgba(201,168,76,0.06);
+  --green:     #5a9a72;
+  --red:       #c46060;
+  --r:         12px;
+  --r-sm:      7px;
+  --font:      "Vazirmatn", sans-serif;
+  --shadow:    0 16px 48px rgba(0,0,0,0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  direction: rtl;
+}
+
+/* ═══════════════════════════════════════
+   BACKGROUND ATMOSPHERE
+═══════════════════════════════════════ */
+.atmosphere {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 800px 500px at 80% -10%, rgba(201,168,76,0.055) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 400px at -10% 90%, rgba(90,90,60,0.04) 0%, transparent 60%);
+}
+
+/* ═══════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════ */
+.shell {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  grid-template-rows: 100vh;
+  height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ═══════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════ */
+.sidebar {
+  background: var(--bg2);
+  border-left: .5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.sidebar-head {
+  padding: 22px 20px 18px;
+  border-bottom: .5px solid var(--border);
+}
+
+.brand {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+}
+.brand-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: var(--gold-dim);
+  border: .5px solid rgba(201,168,76,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.brand-name {
+  font-size: 15px; font-weight: 600; letter-spacing: -.2px;
+  color: var(--text);
+}
+.brand-tag {
+  font-size: 9px; color: var(--gold); opacity: .7; margin-top: 1px;
+}
+.brand-sub {
+  font-size: 10px; color: var(--t3); margin-top: 5px; line-height: 1.5;
+  padding-right: 44px;
+}
+
+/* NEW CHAT BUTTON */
+.new-chat-btn {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: calc(100% - 32px); margin: 14px 16px 0;
+  padding: 9px 14px;
+  background: var(--gold-dim);
+  border: .5px solid rgba(201,168,76,0.22);
+  border-radius: var(--r-sm);
+  color: var(--gold2);
+  font-size: 12px; font-family: var(--font); font-weight: 500;
+  cursor: pointer; transition: all .18s;
+}
+.new-chat-btn:hover {
+  background: rgba(201,168,76,0.18);
+  border-color: rgba(201,168,76,0.35);
+}
+
+/* HISTORY LIST */
+.history-label {
+  font-size: 9.5px; color: var(--t3); font-weight: 500;
+  letter-spacing: .7px; text-transform: uppercase;
+  padding: 16px 18px 7px;
+}
+.history-list {
+  flex: 1; overflow-y: auto; padding: 0 8px 20px;
+}
+.history-item {
+  padding: 9px 11px; border-radius: var(--r-sm);
+  cursor: pointer; transition: all .14s;
+  margin-bottom: 2px; border: .5px solid transparent;
+}
+.history-item:hover { background: var(--bg3); border-color: var(--border); }
+.history-item.active { background: var(--bg4); border-color: var(--border2); }
+.hi-title {
+  font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--t2); line-height: 1;
+}
+.history-item.active .hi-title { color: var(--text); }
+.hi-meta {
+  font-size: 10px; color: var(--t3); margin-top: 3px;
+}
+.history-empty {
+  text-align: center; padding: 24px 16px;
+  font-size: 11px; color: var(--t3); line-height: 1.8;
+}
+
+/* SIDEBAR FOOTER */
+.sidebar-footer {
+  padding: 12px 14px;
+  border-top: .5px solid var(--border);
+  font-size: 10px; color: var(--t3);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sidebar-footer a {
+  color: var(--gold); text-decoration: none; opacity: .7;
+  transition: opacity .15s;
+}
+.sidebar-footer a:hover { opacity: 1; }
+
+/* ═══════════════════════════════════════
+   MAIN CHAT AREA
+═══════════════════════════════════════ */
+.main {
+  display: flex; flex-direction: column;
+  background: var(--bg); overflow: hidden;
+  border-right: .5px solid var(--border);
+}
+
+/* TOP BAR */
+.topbar {
+  height: 56px;
+  border-bottom: .5px solid var(--border);
+  padding: 0 22px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+  background: rgba(12,11,9,0.8);
+  backdrop-filter: blur(12px);
+}
+.topbar-title {
+  font-size: 13px; font-weight: 500; color: var(--t2);
+  display: flex; align-items: center; gap: 8px;
+}
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(90,154,114,0.2);
+  animation: pulse 2.5s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(90,154,114,0.2); }
+  50% { box-shadow: 0 0 0 4px rgba(90,154,114,0.08); }
+}
+.topbar-acts {
+  display: flex; align-items: center; gap: 5px;
+}
+.icon-btn {
+  width: 32px; height: 32px; border-radius: var(--r-sm);
+  border: .5px solid var(--border);
+  background: transparent; color: var(--t3);
+  cursor: pointer; font-size: 14px; font-family: var(--font);
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.icon-btn:hover { background: var(--bg3); color: var(--text); border-color: var(--border2); }
+
+/* MESSAGES AREA */
+.messages {
+  flex: 1; overflow-y: auto;
+  padding: 24px 0;
+  scroll-behavior: smooth;
+}
+
+/* WELCOME SCREEN */
+.welcome {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; padding: 40px 40px;
+  text-align: center;
+  animation: fadeUp .5s ease;
+}
+.welcome-icon {
+  width: 64px; height: 64px; border-radius: 18px;
+  background: var(--gold-dim);
+  border: .5px solid rgba(201,168,76,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; margin-bottom: 20px;
+}
+.welcome-title {
+  font-size: 22px; font-weight: 600; margin-bottom: 10px;
+  background: linear-gradient(135deg, var(--text) 0%, var(--gold) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.welcome-sub {
+  font-size: 12.5px; color: var(--t2); line-height: 1.9; margin-bottom: 30px;
+  max-width: 440px;
+}
+.welcome-chips {
+  display: flex; flex-wrap: wrap; gap: 7px; justify-content: center;
+  max-width: 520px;
+}
+.wchip {
+  padding: 8px 14px;
+  border: .5px solid var(--border2);
+  border-radius: 100px;
+  font-size: 11.5px; color: var(--t2);
+  cursor: pointer; background: var(--bg2);
+  font-family: var(--font); transition: all .16s;
+  line-height: 1;
+}
+.wchip:hover {
+  border-color: rgba(201,168,76,.3); color: var(--gold2);
+  background: var(--gold-glow);
+}
+
+/* MESSAGE ROW */
+.msg-row {
+  padding: 5px 22px;
+  display: flex; gap: 12px;
+  animation: fadeUp .22s ease;
+  max-width: 860px; margin: 0 auto; width: 100%;
+}
+.msg-row.user { flex-direction: row-reverse; }
+
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+}
+.avatar.ai {
+  background: var(--gold-dim);
+  border: .5px solid rgba(201,168,76,0.2);
+  color: var(--gold);
+}
+.avatar.user {
+  background: var(--bg3);
+  border: .5px solid var(--border2);
+  color: var(--t2);
+}
+
+.bubble {
+  max-width: 76%;
+  padding: 11px 15px;
+  border-radius: var(--r);
+  font-size: 13px; line-height: 1.85;
+  border: .5px solid var(--border);
+}
+.msg-row.ai .bubble { background: var(--bg2); border-radius: var(--r) var(--r) var(--r-sm) var(--r); }
+.msg-row.user .bubble {
+  background: var(--bg4); border-color: var(--border2);
+  border-radius: var(--r) var(--r) var(--r) var(--r-sm);
+}
+.bubble strong { color: var(--gold2); }
+.bubble em { color: var(--t2); font-style: normal; }
+.bubble ul { padding-right: 18px; margin-top: 6px; }
+.bubble ul li { margin-bottom: 4px; }
+.bubble code {
+  background: var(--bg4);
+  padding: 1px 6px; border-radius: 4px;
+  font-size: 11.5px; color: var(--gold2);
+}
+
+/* THINKING */
+.thinking-bubble {
+  display: flex; align-items: center; gap: 5px;
+  padding: 12px 16px;
+  background: var(--bg2); border: .5px solid var(--border);
+  border-radius: var(--r); width: fit-content;
+}
+.t-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--gold); opacity: .4;
+  animation: think 1.1s ease infinite;
+}
+.t-dot:nth-child(2) { animation-delay: .18s; }
+.t-dot:nth-child(3) { animation-delay: .36s; }
+@keyframes think {
+  0%, 100% { opacity: .4; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-3px); }
+}
+
+/* ═══════════════════════════════════════
+   INPUT AREA
+═══════════════════════════════════════ */
+.input-area {
+  flex-shrink: 0;
+  padding: 14px 22px 18px;
+  background: var(--bg);
+  border-top: .5px solid var(--border);
+}
+.input-box {
+  display: flex; align-items: flex-end; gap: 8px;
+  background: var(--bg2);
+  border: .5px solid var(--border2);
+  border-radius: var(--r);
+  padding: 8px 8px 8px 14px;
+  transition: border-color .18s;
+}
+.input-box:focus-within {
+  border-color: rgba(201,168,76,0.35);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.05);
+}
+#msg-input {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-family: var(--font); font-size: 13px; color: var(--text);
+  direction: rtl; resize: none; max-height: 130px;
+  line-height: 1.6; padding: 5px 0;
+}
+#msg-input::placeholder { color: var(--t3); }
+.send-btn {
+  width: 36px; height: 36px; border-radius: var(--r-sm);
+  background: var(--gold); border: none; cursor: pointer;
+  color: #1a1400; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all .17s;
+  font-family: var(--font);
+}
+.send-btn:hover { background: var(--gold2); transform: scale(1.03); }
+.send-btn:active { transform: scale(.96); }
+.send-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+
+.input-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 8px; padding: 0 2px;
+}
+.input-hint { font-size: 10px; color: var(--t3); }
+.char-count { font-size: 10px; color: var(--t3); }
+
+/* QUICK CHIPS IN INPUT */
+.quick-chips {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 9px;
+}
+.qchip {
+  padding: 5px 11px; border: .5px solid var(--border);
+  border-radius: 100px; font-size: 11px; color: var(--t3);
+  cursor: pointer; background: var(--bg3);
+  font-family: var(--font); transition: all .13s;
+  white-space: nowrap;
+}
+.qchip:hover { border-color: rgba(201,168,76,.25); color: var(--t2); }
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  z-index: 999; padding: 9px 22px; border-radius: var(--r-sm);
+  font-size: 12px; pointer-events: none;
+  opacity: 0; transition: all .3s; white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+.toast.ok { background: #0d1f15; border: .5px solid rgba(90,154,114,.3); color: var(--green); }
+.toast.info { background: #1a1608; border: .5px solid rgba(201,168,76,.3); color: var(--gold); }
+.toast.err { background: #1f0d0d; border: .5px solid rgba(196,96,96,.3); color: var(--red); }
+
+/* ═══════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════ */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-thumb { background: rgba(255,248,230,0.1); border-radius: 3px; }
+
+/* ═══════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ═══════════════════════════════════════
+   MOBILE
+═══════════════════════════════════════ */
+@media (max-width: 680px) {
+  .shell { grid-template-columns: 1fr; grid-template-rows: 100vh; }
+  .sidebar { display: none; }
+  .main { border: none; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="atmosphere"></div>
+<div class="toast" id="toast"></div>
+
+<div class="shell">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div class="brand">
+        <div class="brand-icon">🏠</div>
+        <div>
+          <div class="brand-name">DecoBot</div>
+          <div class="brand-tag">AI · مشاور دکور داخلی</div>
+        </div>
+      </div>
+      <div class="brand-sub">مشاوره تخصصی دکوراسیون، رنگ، متراژ و سبک طراحی داخلی</div>
+    </div>
+
+    <button class="new-chat-btn" onclick="newChat()">
+      ✦ گفتگوی جدید
+    </button>
+
+    <div class="history-label">تاریخچه گفتگوها</div>
+    <div class="history-list" id="hist-list">
+      <div class="history-empty" id="hist-empty">هنوز گفتگویی نداری.<br>یه سوال بپرس تا شروع کنیم!</div>
+    </div>
+
+    <div class="sidebar-footer">
+      <span>نسخه ۱.۰ — فاز اول</span>
+      <a href="#" onclick="clearAll();return false">پاک کردن همه</a>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title">
+        <span class="status-dot"></span>
+        <span id="chat-title">مشاور دکور داخلی</span>
+      </div>
+      <div class="topbar-acts">
+        <button class="icon-btn" onclick="exportChat()" title="خروجی گفتگو">⬇</button>
+        <button class="icon-btn" onclick="newChat()" title="گفتگوی جدید">✦</button>
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <!-- welcome screen -->
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">🏠</div>
+        <div class="welcome-title">مشاور هوشمند دکور</div>
+        <div class="welcome-sub">
+          از رنگ‌بندی اتاق تا چیدمان مبلمان، از انتخاب متریال تا سبک طراحی —
+          هر سوالی درباره دکور داخلی خونه‌ات داری بپرس.
+        </div>
+        <div class="welcome-chips">
+          <span class="wchip" onclick="askPreset(this)">رنگ مناسب اتاق ۱۵ متری</span>
+          <span class="wchip" onclick="askPreset(this)">سبک مینیمال یا بوهو؟</span>
+          <span class="wchip" onclick="askPreset(this)">مبل مناسب فضای کوچک</span>
+          <span class="wchip" onclick="askPreset(this)">چیدمان پذیرایی ایرانی مدرن</span>
+          <span class="wchip" onclick="askPreset(this)">بهترین رنگ دیوار برای اتاق تاریک</span>
+          <span class="wchip" onclick="askPreset(this)">گیاه مناسب داخل خانه</span>
+          <span class="wchip" onclick="askPreset(this)">چطور یه آپارتمان ۵۰ متری رو بزرگ‌تر نشون بدم</span>
+          <span class="wchip" onclick="askPreset(this)">پرده مناسب اتاق خواب</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="quick-chips" id="quick-chips">
+        <span class="qchip" onclick="askPreset(this)">💡 ایده رنگ</span>
+        <span class="qchip" onclick="askPreset(this)">🛋 مبلمان</span>
+        <span class="qchip" onclick="askPreset(this)">💡 نورپردازی</span>
+        <span class="qchip" onclick="askPreset(this)">🌿 گیاه</span>
+        <span class="qchip" onclick="askPreset(this)">📐 متراژ</span>
+      </div>
+      <div class="input-box">
+        <textarea
+          id="msg-input"
+          rows="1"
+          placeholder="سوالت رو بنویس... مثلاً: رنگ مناسب اتاق ۱۸ متری با نور کم؟"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this);updateCount()"
+        ></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">↑</button>
+      </div>
+      <div class="input-footer">
+        <span class="input-hint">Enter برای ارسال · Shift+Enter برای خط جدید</span>
+        <span class="char-count" id="char-count"></span>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   CONFIG — در production فقط endpoint را عوض کن
+═══════════════════════════════════════════════ */
+const API_ENDPOINT = window.DECOBOT_API_ENDPOINT || '/api/chat';  // backend proxy or Cloudflare Worker
+const STORAGE_KEY  = 'decobot_v1_sessions';
+const MAX_HIST     = 40; // max messages to send to AI
+
+/* ═══════════════════════════════════════════════
+   SYSTEM PROMPT — مغز مشاور
+═══════════════════════════════════════════════ */
+const SYSTEM = `تو DecoBot هستی — یک مشاور متخصص و باتجربه دکوراسیون داخلی برای خانه‌های ایرانی.
+
+تخصص‌های تو:
+• رنگ‌بندی — پالت رنگی، ترکیب رنگ‌ها، روان‌شناسی رنگ در فضا
+• سبک‌شناسی — مینیمال، بوهو، لاکچری، روستیک، نوردیک، ایرانی کلاسیک، مدرن
+• متراژ و چیدمان — بهینه‌سازی فضا، نقشه‌چینی اتاق‌های کوچک
+• مبلمان — انتخاب، ابعاد مناسب، ترکیب رنگ و جنس
+• نورپردازی — نور طبیعی، مصنوعی، اتمسفریک
+• پرده و فرش — انتخاب، سایز، الگو و بافت
+• گیاهان داخلی — نوع، جانمایی، نگهداری
+• اکسسوری و تزئینات — گلدان، تابلو، کوسن، شمع و بالانس فضا
+• بودجه‌بندی — راهکارهای کم‌هزینه و لاکچری
+
+اصول کار تو:
+۱. بالانس — کمتر بهتره، فضای خالی ارزش داره
+۲. پرسش‌گری — اگر اطلاعات کافی نداری (متراژ، نور، سبک دلخواه) بپرس
+۳. عملی بودن — پیشنهادهات باید قابل اجرا در ایران باشه
+۴. صادق باشی — اگر ترکیبی مناسب نیست، صادقانه بگو
+۵. مختصر و مفید — جواب‌های طولانی بده اما پر از اطلاعات مفید
+
+زبان: فارسی روان، گرم، حرفه‌ای — نه خیلی رسمی، نه خیلی خودمانی.
+اگر از اصطلاح انگلیسی استفاده کردی (مثلاً Wabi-Sabi یا Japandi)، کوتاه توضیح بده.`;
+
+/* ═══════════════════════════════════════════════
+   SESSION MANAGEMENT
+═══════════════════════════════════════════════ */
+let sessions   = [];   // [{ id, title, created, messages: [{role, content, ts}] }]
+let activeId   = null;
+let isBusy     = false;
+
+function loadSessions() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    sessions = raw ? JSON.parse(raw) : [];
+  } catch { sessions = []; }
+}
+
+function saveSessions() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+  } catch(e) { showToast('خطا در ذخیره تاریخچه', 'err'); }
+}
+
+function getActive() {
+  return sessions.find(s => s.id === activeId) || null;
+}
+
+function createSession() {
+  const s = {
+    id: 'sess_' + Date.now(),
+    title: 'گفتگوی جدید',
+    created: Date.now(),
+    messages: []
+  };
+  sessions.unshift(s);
+  saveSessions();
+  return s;
+}
+
+function generateTitle(firstMsg) {
+  const t = firstMsg.slice(0, 35);
+  return t.length < firstMsg.length ? t + '...' : t;
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════ */
+function renderHistory() {
+  const list = document.getElementById('hist-list');
+  const empty = document.getElementById('hist-empty');
+
+  if (sessions.length === 0) {
+    list.innerHTML = '<div class="history-empty">هنوز گفتگویی نداری.<br>یه سوال بپرس تا شروع کنیم!</div>';
+    return;
+  }
+
+  list.innerHTML = sessions.map(s => `
+    <div class="history-item${s.id === activeId ? ' active' : ''}" onclick="loadSession('${s.id}')">
+      <div class="hi-title">${s.title}</div>
+      <div class="hi-meta">${formatDate(s.created)} · ${s.messages.length} پیام</div>
+    </div>`).join('');
+}
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return 'همین الان';
+  if (diff < 3600) return Math.floor(diff / 60) + ' دقیقه پیش';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' ساعت پیش';
+  return d.toLocaleDateString('fa-IR');
+}
+
+function renderMessages() {
+  const s = getActive();
+  const container = document.getElementById('messages');
+
+  if (!s || s.messages.length === 0) {
+    container.innerHTML = `<div class="welcome" id="welcome">
+      <div class="welcome-icon">🏠</div>
+      <div class="welcome-title">مشاور هوشمند دکور</div>
+      <div class="welcome-sub">از رنگ‌بندی اتاق تا چیدمان مبلمان، از انتخاب متریال تا سبک طراحی — هر سوالی درباره دکور داخلی خونه‌ات داری بپرس.</div>
+      <div class="welcome-chips">
+        <span class="wchip" onclick="askPreset(this)">رنگ مناسب اتاق ۱۵ متری</span>
+        <span class="wchip" onclick="askPreset(this)">سبک مینیمال یا بوهو؟</span>
+        <span class="wchip" onclick="askPreset(this)">مبل مناسب فضای کوچک</span>
+        <span class="wchip" onclick="askPreset(this)">چیدمان پذیرایی ایرانی مدرن</span>
+        <span class="wchip" onclick="askPreset(this)">بهترین رنگ دیوار برای اتاق تاریک</span>
+        <span class="wchip" onclick="askPreset(this)">گیاه مناسب داخل خانه</span>
+        <span class="wchip" onclick="askPreset(this)">چطور یه آپارتمان ۵۰ متری رو بزرگ‌تر نشون بدم</span>
+        <span class="wchip" onclick="askPreset(this)">پرده مناسب اتاق خواب</span>
+      </div>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = s.messages.map(m => renderMsg(m)).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+function renderMsg(m) {
+  const isUser = m.role === 'user';
+  const content = formatContent(m.content);
+  return `<div class="msg-row ${isUser ? 'user' : 'ai'}">
+    <div class="avatar ${isUser ? 'user' : 'ai'}">${isUser ? '👤' : '✦'}</div>
+    <div class="bubble">${content}</div>
+  </div>`;
+}
+
+function formatContent(text) {
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code>$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+function appendMsg(m) {
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+  const container = document.getElementById('messages');
+  const el = document.createElement('div');
+  el.innerHTML = renderMsg(m);
+  container.appendChild(el.firstChild);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showThinking() {
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+  const container = document.getElementById('messages');
+  const el = document.createElement('div');
+  el.className = 'msg-row ai';
+  el.id = 'thinking';
+  el.innerHTML = `<div class="avatar ai">✦</div>
+    <div class="thinking-bubble">
+      <div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div>
+    </div>`;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeThinking() {
+  const el = document.getElementById('thinking');
+  if (el) el.remove();
+}
+
+/* ═══════════════════════════════════════════════
+   CHAT ACTIONS
+═══════════════════════════════════════════════ */
+function newChat() {
+  const s = createSession();
+  activeId = s.id;
+  document.getElementById('chat-title').textContent = 'گفتگوی جدید';
+  renderHistory();
+  renderMessages();
+  document.getElementById('msg-input').focus();
+}
+
+function loadSession(id) {
+  activeId = id;
+  const s = getActive();
+  if (s) document.getElementById('chat-title').textContent = s.title;
+  renderHistory();
+  renderMessages();
+}
+
+async function sendMessage() {
+  if (isBusy) return;
+  const input = document.getElementById('msg-input');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  // Ensure active session
+  if (!activeId) {
+    const s = createSession();
+    activeId = s.id;
+  }
+
+  const s = getActive();
+  input.value = '';
+  autoResize(input);
+  updateCount();
+
+  // Add user message
+  const userMsg = { role: 'user', content: text, ts: Date.now() };
+  s.messages.push(userMsg);
+
+  // Update title after first message
+  if (s.messages.length === 1) {
+    s.title = generateTitle(text);
+    document.getElementById('chat-title').textContent = s.title;
+  }
+
+  saveSessions();
+  appendMsg(userMsg);
+  renderHistory();
+
+  // Send to AI
+  isBusy = true;
+  document.getElementById('send-btn').disabled = true;
+  showThinking();
+
+  try {
+    const messages = s.messages
+      .slice(-MAX_HIST)
+      .map(m => ({ role: m.role, content: m.content }));
+
+    const res = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages, system: SYSTEM })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const reply = data.content || '';
+
+    const aiMsg = { role: 'assistant', content: reply, ts: Date.now() };
+    s.messages.push(aiMsg);
+    saveSessions();
+
+    removeThinking();
+    appendMsg(aiMsg);
+    renderHistory();
+
+  } catch (e) {
+    removeThinking();
+    const errMsg = {
+      role: 'assistant',
+      content: `⚠ متأسفم، مشکلی پیش اومد: ${e.message}\nدوباره تلاش کن.`,
+      ts: Date.now()
+    };
+    s.messages.push(errMsg);
+    saveSessions();
+    appendMsg(errMsg);
+  }
+
+  isBusy = false;
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('msg-input').focus();
+}
+
+function askPreset(el) {
+  const input = document.getElementById('msg-input');
+  input.value = el.textContent.replace(/^[💡🛋🌿📐]\s*/, '').trim();
+  autoResize(input);
+  sendMessage();
+}
+
+/* ═══════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════ */
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 130) + 'px';
+}
+
+function updateCount() {
+  const v = document.getElementById('msg-input').value;
+  const el = document.getElementById('char-count');
+  el.textContent = v.length > 20 ? v.length + ' کاراکتر' : '';
+}
+
+function showToast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + type + ' show';
+  setTimeout(() => el.className = 'toast', 2600);
+}
+
+function exportChat() {
+  const s = getActive();
+  if (!s || s.messages.length === 0) {
+    showToast('گفتگویی برای خروجی وجود نداره', 'info');
+    return;
+  }
+  const txt = s.messages.map(m =>
+    `[${m.role === 'user' ? 'کاربر' : 'DecoBot'}] ${new Date(m.ts).toLocaleString('fa-IR')}\n${m.content}\n`
+  ).join('\n---\n\n');
+
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `decobot_${s.id}.txt`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('فایل گفتگو دانلود شد ✓');
+}
+
+function clearAll() {
+  if (!confirm('همه گفتگوها پاک بشن؟')) return;
+  sessions = [];
+  activeId = null;
+  saveSessions();
+  renderHistory();
+  renderMessages();
+  showToast('تاریخچه پاک شد', 'info');
+}
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+loadSessions();
+renderHistory();
+renderMessages();
+document.getElementById('msg-input').focus();
+</script>
+</body>
+</html>
